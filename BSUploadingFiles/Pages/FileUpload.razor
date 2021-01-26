@@ -1,0 +1,47 @@
+﻿@page "/file"
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Hosting
+@inject IWebHostEnvironment env
+
+<h3>FileUpload</h3>
+
+<h3 class="mt-5">@Mensaje</h3>
+
+<form @onsubmit="OnSubmit">
+    <InputFile OnChange="OnInputFileChange" multiple />
+    <br /><br />
+    <button class="btn btn-primary" type="submit">Cargar Archivo(s)</button>
+</form>
+
+@code {
+
+    string Mensaje = "No hay archivos seleccionados";
+    IReadOnlyList<IBrowserFile> archivosSeleccionados;
+
+    private void OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        archivosSeleccionados = e.GetMultipleFiles();
+        Mensaje = $"{archivosSeleccionados.Count} archivos seleccionados";
+        this.StateHasChanged();
+    }
+
+    private async void OnSubmit()
+    {
+        string ruta = "";
+
+        foreach (var archivo in archivosSeleccionados)
+        {
+            Stream stream = archivo.OpenReadStream();
+            ruta = $"{env.WebRootPath}\\{archivo.Name}";
+            FileStream fileStream = File.Create(ruta);
+            await stream.CopyToAsync(fileStream);
+            stream.Close();
+            fileStream.Close();
+        }
+
+        Console.WriteLine(ruta);
+        Mensaje = $"{archivosSeleccionados.Count} archivo(s) cargados al servidor";
+        this.StateHasChanged();
+    }
+}
